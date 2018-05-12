@@ -18,6 +18,7 @@
     "express": "^4.16.3",
     "lodash": "^4.17.10",
     "redis": "^2.8.0",
+    "redis-notifier": "^1.0.0",
     "request": "^2.85.0"
   }
 }

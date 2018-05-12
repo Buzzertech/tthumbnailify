@@ -14,7 +14,7 @@ module.exports.addEntry = (id, type, url, public_id) => {
         .then(()=>{return client.hsetAsync(key, "public_id", public_id)})
         .then(()=>{ return client.hsetAsync(config.notification.key, key, public_id)})
         .then(()=>{
-            resolve('done');
+            resolve();
         }).catch((err)=>{
             console.error(err);
             reject(err);
