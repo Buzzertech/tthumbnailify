@@ -1,0 +1,14 @@
+var http = require('http');
+var app = require('../server');
+var port = process.env.PORT || 3000
+app.set(port);
+
+var server = http.createServer(app);
+
+server.listen(port);
+server.on('error', function(error){
+    console.log(error);
+});
+server.on('listening', function(success){
+    console.log('listening on port - ' + port);
+});

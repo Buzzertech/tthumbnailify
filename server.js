@@ -41,6 +41,5 @@ app.get('/', (req,res)=>{
 })
 
 //create server
-app.listen(3000,(res)=>{
-    console.log('server is listening at localhost:3000');
-})
+
+module.exports = app;
