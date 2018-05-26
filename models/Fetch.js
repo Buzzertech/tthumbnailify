@@ -5,7 +5,7 @@ var fs = require('fs');
 var request = require('request');
 var zip = require('../lib/zipIt');
 
-var imageOptions = ["maxresdefault", "default", "hqdefault", "mqdefault", "sddefault", "all"];
+var imageOptions = ["maxresdefault", "default", "hqdefault", "mqdefault", "sddefault"];
 var acceptedOption = ["youtube.com", "youtu.be", "www.youtube.com", "m.youtube.com"]
 
 var validateAndUpload = (resolve, reject, url, params) => {
@@ -104,10 +104,17 @@ module.exports.getBulk = (urlArray, params) => {
                     })
                 }))
             }).then(() => {
-                var path = zip.finalizeArchive();
-                resolve({
-                    code: 200,
-                    response: path
+                zip.finalizeArchive().then(val=>{
+                    resolve({
+                        code: 200,
+                        response: val
+                    });
+                }).catch(err=>{
+                    console.log('heree')
+                    reject({
+                        code: 500,
+                        response: err
+                    })
                 });
             }).catch((err) => {
                 reject({
