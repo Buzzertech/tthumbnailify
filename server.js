@@ -2,7 +2,7 @@
 const express = require('express');
 const body = require('body-parser');
 const cors = require('cors');
-const subscribe = require('./core/service');
+const service = require('./core/service');
 var fs = require('fs');
 
 //routes
@@ -24,7 +24,7 @@ app.use(body.urlencoded({
     extended: true
 }));
 
-app.use(function(res,req,next){
+app.use(function (res, req, next) {
     req.connection.setTimeout(600000);
     res.connection.setTimeout(600000);
     next();
@@ -32,30 +32,36 @@ app.use(function(res,req,next){
 
 app.use(cors());
 
-app.use((req,res,next)=>{
-    console.log('here');
-    fs.exists('temp', (exists)=>{
-        if(!exists){
+
+    fs.exists('temp', (exists) => {
+        if (!exists) {
             fs.mkdir('temp');
         }
     });
-    fs.exists('temp/zip', (exists)=>{
-        if(!exists){
+    fs.exists('temp/zip', (exists) => {
+        if (!exists) {
             fs.mkdir('temp/zip');
         }
     })
-    next();
-});
+   
+
+
+    var clear = process.env.CLEAR_CACHE;
+    console.log('here',clear);
+    if (clear) {
+        service.invalidateExplicitly();
+    }
+
 
 //routes
 app.use('/data', fetch);
 
 //Universal Route
-app.get('/', (req,res)=>{
+app.get('/', (req, res) => {
     res.status(404);
 })
 
-subscribe();
+service.subscribe();
 //create server
 
 module.exports = app;
