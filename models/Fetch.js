@@ -4,7 +4,7 @@ var _ = require('lodash');
 var fs = require('fs');
 var request = require('request');
 var zip = require('../lib/zipIt');
-
+var promise = require('bluebird');
 var imageOptions = ["maxresdefault", "default", "hqdefault", "mqdefault", "sddefault"];
 var acceptedOption = ["youtube.com", "youtu.be", "www.youtube.com", "m.youtube.com"]
 
@@ -22,30 +22,31 @@ var validateAndUpload = (resolve, reject, url, params) => {
             });
             console.error(err);
         })
-    }).catch((err) => {
+    }).catch((existingVal) => {
         resolve({
             code: 200,
-            response: err
+            response: existingVal.url
         });
     })
 }
 
 var validateAndZip = (url, params) => {
     return new Promise((resolve, reject) => {
-        var _val;
-        util.createThumbLink(url, params).then((val) => {
-            _val = val;
-            return util.getThumbTemp(val, url, params);
-        }).catch((val) => {
-            _val = val;
-            return Promise.resolve(val);
-        }).then(file => {
-            console.log('here', file);
-            zip.appendToArchive(file, _val).then(resolve()).catch(reject());
-        }).catch(err => {
-            reject('error');
-            console.error(err);
-        })
+        util.createThumbLink(url, params)
+            .then(val => {
+                return util.getThumbTemp(val, url, params);
+            })
+            .catch(val => {
+                return Promise.resolve(val);
+            })
+            .then(response => {
+                //zip.appendToArchive(file, _val).then(resolve()).catch(reject());
+                zip.addToArr(response.public_id).then(resolve()).catch(reject);
+            })
+            .catch(err => {
+                reject('error');
+                console.error(err);
+            })
     }).catch((err) => {
         reject(err);
         console.log(err);
@@ -82,46 +83,55 @@ module.exports.getSingle = (tubeurl, params) => {
 module.exports.getBulk = (urlArray, params) => {
     return new Promise((resolve, reject) => {
         if (_.isArray(urlArray) && _.includes(imageOptions, params)) {
-            zip.initArchiver().then(() => {
-                zip.setupListener();
-                return Promise.all(urlArray.map((item) => {
-                    return new Promise((resolve, reject) => {
-                        let custom = url.parse(item, true);
-                        let query = custom.query;
-                        if (query.v) {
-                            validateAndZip(query.v, params).then(() => {
-                                resolve();
-                            }).catch(err => {
-                                reject();
+            if(urlArray.length === 1){
+                return module.exports.getSingle(urlArray[0], params).then(resolve).catch(reject);
+            }
+            zip.initIds().then(() => {
+                    return Promise.all(urlArray.map((item) => {
+                        return new Promise((resolve, reject) => {
+                            let custom = url.parse(item, true);
+                            let query = custom.query;
+                            if (query.v) {
+                                validateAndZip(query.v, params).then(() => {
+                                    console.log('here');
+                                    resolve();
+                                }).catch(err => {
+                                    reject();
+                                })
+                            } else {
+                                validateAndZip(custom.path.replace('/', ''), params).then(() => {
+                                    resolve();
+                                }).catch(err => {
+                                    reject();
+                                })
+                            }
+                        })
+
+                    }))
+                })
+                .then(() => {
+                    console.log('here');
+
+                    return zip.initZip()
+                        .then(val => {
+                            resolve({
+                                code: 200,
+                                response: val
                             })
-                        } else {
-                            validateAndZip(custom.path.replace('/', ''), params).then(() => {
-                                resolve();
-                            }).catch(err => {
-                                reject();
+                        })
+                        .catch(err => {
+                            reject({
+                                code: 500,
+                                response: err
                             })
-                        }
-                    })
-                }))
-            }).then(() => {
-                zip.finalizeArchive().then(val=>{
-                    resolve({
-                        code: 200,
-                        response: val
-                    });
-                }).catch(err=>{
-                    console.log('heree')
+                        })
+                })
+                .catch((err) => {
                     reject({
                         code: 500,
                         response: err
-                    })
-                });
-            }).catch((err) => {
-                reject({
-                    code: 500,
-                    response: err
-                });
-            })
+                    });
+                })
         } else {
             reject({
                 code: 404,

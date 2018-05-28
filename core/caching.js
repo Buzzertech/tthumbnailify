@@ -26,7 +26,7 @@ module.exports.addEntry = (id, type, url, public_id) => {
 module.exports.getEntry = (id,type)=>{
     return new Promise((resolve,reject)=>{
         const key = createKey(id,type);
-        client.hgetAsync(key, "url").then((val)=>{
+        client.hgetallAsync(key).then((val)=>{
             client.expire(key, 86400);
             resolve(val);
         }).catch(err=>{
