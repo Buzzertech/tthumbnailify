@@ -4,6 +4,4 @@ package-lock.json
 
 temp
 
-lib/config.js
-
-.gitignore
+public/
